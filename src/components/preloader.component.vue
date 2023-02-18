@@ -1,5 +1,9 @@
 <template>
   <div ref="preloader" class="preloader">
+    RLT - hack 2023
+  </div>
+  <div class="noize">
+
   </div>
 </template>
 
@@ -42,6 +46,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: var(--font-xxl);
 
   div {
     transition: 0.2s;
@@ -91,5 +96,19 @@ export default {
       transform: translateX(-100%);
     }
   }
+}
+.noize{
+  position: fixed;
+  height: 100vh;
+  width: 100vw;
+  top: 0;
+  left: 0;
+  z-index: 9999999;
+  background: url("@/assets/noize.png");
+  opacity: 0.1;
+  user-select: none;
+  user-drag: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
 }
 </style>

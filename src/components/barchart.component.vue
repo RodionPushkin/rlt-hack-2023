@@ -1,16 +1,23 @@
 <template>
   <div class="shadow">
     <Bar
-      :chartData="config.data"
-      :height="0"
-      :width="0"
+      :data="config.data"
+      :options="config.options"
     />
   </div>
 </template>
 
 <script>
-import {Bar} from 'vue-chartjs'
-import {Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale} from 'chart.js'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale
+} from 'chart.js'
+import { Bar } from 'vue-chartjs'
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 export default {
@@ -35,7 +42,7 @@ export default {
 div {
   padding: 16px;
   border-radius: var(--border-radius);
-  background: var(--bg-color);
+  background: var(--color-main);
 
   canvas {
     max-width: 100%;

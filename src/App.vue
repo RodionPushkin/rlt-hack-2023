@@ -1,6 +1,6 @@
 <template>
   <preloader></preloader>
-  <headerComponent></headerComponent>
+<!--  <headerComponent></headerComponent>-->
   <mainComponent>
     <router-view v-slot="{ Component, route }">
       <transition mode="out-in">

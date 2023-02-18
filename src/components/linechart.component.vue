@@ -59,7 +59,7 @@ export default {
 div {
   padding: 16px;
   border-radius: var(--border-radius);
-  background: #0C0C0C;
+  background: var(--color-main);
   canvas {
     max-width: 100%;
   }

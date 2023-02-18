@@ -1,6 +1,6 @@
 import {createRouter, createWebHistory} from 'vue-router'
 
-const title = 'hackers 54'
+const title = 'rlt-hack '
 import apiModule from '../api'
 
 const api = new apiModule('/api/')
