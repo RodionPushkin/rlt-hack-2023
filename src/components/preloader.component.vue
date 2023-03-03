@@ -34,6 +34,7 @@ export default {
 
 <style lang="scss" scoped>
 .preloader {
+  opacity: 0;
   position: fixed;
   height: 100vh;
   width: 100vw;

@@ -392,4 +392,40 @@ module.exports = router => {
   router.post(`/api/upload`, [corsMiddleware], async (req, res) => {
     res.json(await saveFiles(req.files))
   })
+  router.get('/api/data', [corsAllMiddleware, authNotMiddleware], async (req, res, next) => {
+    try {
+      console.log(req.query)
+      res.json(req.query)
+    } catch (e) {
+      next(e)
+    }
+  })
+  router.get('/api/seller', [corsAllMiddleware, authNotMiddleware], async (req, res, next) => {
+    try {
+      res.json(await db.query('select distinct * from data.seller').then(res => res.rows))
+    } catch (e) {
+      next(e)
+    }
+  })
+  router.get('/api/tarif', [corsAllMiddleware, authNotMiddleware], async (req, res, next) => {
+    try {
+      res.json(await db.query('select distinct * from data.tariff').then(res => res.rows))
+    } catch (e) {
+      next(e)
+    }
+  })
+  router.get('/api/medium', [corsAllMiddleware, authNotMiddleware], async (req, res, next) => {
+    try {
+      res.json(await db.query('select distinct * from data.utm_medium').then(res => res.rows))
+    } catch (e) {
+      next(e)
+    }
+  })
+  router.get('/api/source', [corsAllMiddleware, authNotMiddleware], async (req, res, next) => {
+    try {
+      res.json(await db.query('select distinct * from data.utm_source').then(res => res.rows))
+    } catch (e) {
+      next(e)
+    }
+  })
 }

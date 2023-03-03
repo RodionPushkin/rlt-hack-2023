@@ -1,43 +1,59 @@
 <template>
-  <div class="container">
-    <div class="tabs">
-      <div @click="tab.selectedTab = item" class="tab" :class="{active: tab.selectedTab == item}" v-for="(item,index) in tab.tabs" :key="index">{{item}}</div>
+  <div>
+    <form class="search" @submit.prevent>
+      <div class="input">
+        <input ref="search" placeholder=" " type="text" @change="load">
+        <label>поиск</label>
+      </div>
+      <button @click="load">найти</button>
+    </form>
+    <div class="filters">
+      <select v-for="(filter,index) in filters" :key="index" :ref="filter.field_name" v-model="filter.selected"
+              @change="load">
+        <option :value="filter.field" selected>{{ filter.field }}</option>
+        <option v-for="(value,value_index) in filter.values" :key="filter.field+value_index" :value="value">
+          {{ value }}
+        </option>
+      </select>
+      <div class="input">
+        <input ref="datefrom" placeholder=" " type="date" @change="load">
+        <label>дата от</label>
+      </div>
+      <div class="input">
+        <input ref="dateto" placeholder=" " type="date" @change="load">
+        <label>дата до</label>
+      </div>
     </div>
-    <div class="tab-wrapper">
-      <div class="tab" v-if="tab.selectedTab == 'дашборд'">
-        <div class="cards" ref="cards" @mouseleave="stopDrag">
-          <div class="card-wrapper"
-               v-for="(item, index) in cards"
-               :key="index" :style="`width: ${item.size.x}px; height: ${item.size.y}px;`">
-            <div class="card"
-                 :style="`width: ${item.size.x}px; height: ${item.size.y}px;`"
-                 @mousedown="mouseStart($event,item)"
-                 @mouseup="mouseEnd($event,item)"
-                 @mousemove="mouseMove($event,item)"
-                 @touchstart="touchStart($event,item)"
-                 @touchend="touchEnd($event,item)"
-                 @touchmove="touchMove($event,item)">
-              <span>{{ item.text }}</span>
-              <doughnut v-if="chartdata.labels && chartdata.datasets" :datasets="chartdata.datasets" :labels="chartdata.labels"
-                        :options="chartdata.options" />
-            </div>
+    <div ref="cards" class="cards" @mouseleave="stopDrag">
+      <div v-for="(item, index) in cards"
+           :key="index+item.type"
+           :style="`width: ${item.size?.x ? item.size.x : ''}; height: ${item.size?.y ? item.size.y : ''};`"
+           class="card-wrapper">
+        <div :style="`width: ${item.size?.x ? item.size.x : ''}; height: ${item.size?.y ? item.size.y : ''};`"
+             class="card"
+             @mousedown="mouseStart($event,item)"
+             @mousemove="mouseMove($event,item)"
+             @mouseup="mouseEnd($event,item)"
+             @touchend="touchEnd($event,item)"
+             @touchmove="touchMove($event,item)"
+             @touchstart="touchStart($event,item)">
+          <!--          {{item.index}}-->
+          <!--          <i>{{item.index}}</i>-->
+          <span :class="{info: item.type == 'info'}" class="title">{{ item.title }}</span>
+          <p v-if="item.type == 'info'">{{ item.value }}</p>
+          <div v-if="item.type == 'doughnut' || item.type == 'linechart' || item.type == 'barchart'"
+               class="chart-wrapper">
+            <doughnut v-if="chartdata.labels && chartdata.datasets && item.type == 'doughnut'"
+                      :datasets="chartdata.datasets" :labels="chartdata.labels"
+                      :options="chartdata.options"/>
+            <linechart v-if="chartdata.labels && chartdata.datasets && item.type == 'linechart'"
+                       :datasets="chartdata.datasets2" :labels="chartdata.labels"
+                       :options="chartdata.options" class="linechart"/>
+            <barchart v-if="chartdata.labels && chartdata.datasets && item.type == 'barchart'"
+                      :datasets="chartdata.datasets3" :labels="chartdata.labels"></barchart>
           </div>
         </div>
-        <div class="chart-wrapper">
-          <linechart v-if="chartdata.labels && chartdata.datasets" :datasets="chartdata.datasets" :labels="chartdata.labels"
-                     :options="chartdata.options" class="linechart"/>
-        </div>
       </div>
-      <div class="tab" v-if="tab.selectedTab == 'редактор кода'">
-        <div class="tab-header">
-          <p>psql запрос на выборку данных (для продвинутых пользователей)</p>
-          <button class="execute">выполнить</button>
-        </div>
-        <textarea class="code-wrapper" contenteditable="true" v-model="code"/>
-      </div>
-    </div>
-    <div class="chart-wrapper">
-      <barchart v-if="chartdata.labels && chartdata.datasets" :datasets="chartdata.datasets" :labels="chartdata.labels"></barchart>
     </div>
   </div>
 </template>
@@ -51,46 +67,82 @@ export default {
   components: {doughnut, barchart, linechart},
   data() {
     return {
+      loadTimer: 0,
       cards: [
         {
           index: 0,
-          text: "график 1",
-          size:{
-            x: 144,
-            y: 144
-          }
+          title: "кол-во продаж",
+          type: "linechart",
         },
         {
           index: 1,
-          text: "график 2",
-          size:{
-            x: 144,
-            y: 144
-          }
+          title: "сум. кол-во продаж",
+          type: "info",
+          value: 140
         },
         {
           index: 2,
-          text: "график 3",
-          size:{
-            x: 144,
-            y: 144
-          }
+          title: "сред. кол-во продаж",
+          type: "info",
+          value: 46
         },
         {
           index: 3,
-          text: "график 4",
-          size:{
-            x: 144,
-            y: 144
-          }
+          title: "прибыль",
+          type: "barchart",
         },
         {
           index: 4,
-          text: "график 5",
-          size:{
-            x: 144,
-            y: 144
-          }
+          title: "сум. прибыль",
+          type: "info",
+          value: 50
+        },
+        {
+          index: 5,
+          title: "сред. прибыль",
+          type: "info",
+          value: 34
+        },
+        {
+          index: 6,
+          title: "эффективность продаж",
+          type: "linechart"
+        },
+        {
+          index: 7,
+          title: "сум. эффек-ность. продаж",
+          type: "info",
+          value: 86
+        },
+        {
+          index: 8,
+          title: "сред. эффек-ность. продаж",
+          type: "info",
+          value: 64
+        },
+        {
+          index: 9,
+          title: "окупаемость",
+          type: "info",
+          value: 40
+        },
+        {
+          index: 10,
+          title: "средний НДС",
+          type: "info",
+          value: 10
+        },
+        {
+          index: 11,
+          title: "сред. стоимость клиента",
+          type: "info",
+          value: 1000
+        },
+        {
+          index: 12,
+          title: "сред. стоимость перехода",
+          type: "info",
+          value: 800
         },
       ],
       drag: {
@@ -102,6 +154,36 @@ export default {
         delayed: false,
         labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
         datasets: [
+          {
+            label: 'прошлые показатели',
+            data: [0, 20, 20, 60, 60, 60, 120, 140, 180, 120, NaN, NaN, NaN],
+            borderColor: "#A20DF6",
+            backgroundColor: "#A20DF6",
+            fill: false,
+          }, {
+            label: 'предсказано',
+            data: [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, 120, 10, 120, 130],
+            borderDash: [5, 5],
+            borderColor: "#00C572",
+            backgroundColor: "#00C572",
+            fill: false,
+          }],
+        datasets2: [
+          {
+            label: 'прошлые показатели',
+            data: [0, 20, 20, 60, 60, 60, 120, 140, 180, 120, NaN, NaN, NaN],
+            borderColor: "#A20DF6",
+            backgroundColor: "#A20DF6",
+            fill: false,
+          }, {
+            label: 'предсказано',
+            data: [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, 120, 10, 120, 130],
+            borderDash: [5, 5],
+            borderColor: "#00C572",
+            backgroundColor: "#00C572",
+            fill: false,
+          }],
+        datasets3: [
           {
             label: 'прошлые показатели',
             data: [0, 20, 20, 60, 60, 60, 120, 140, 180, 120, NaN, NaN, NaN],
@@ -157,26 +239,93 @@ export default {
           }
         }
       },
-      tab:{
-        tabs: [
-          "дашборд",
-          "редактор кода"
-        ],
-        selectedTab: "дашборд",
-      },
-      code: "SELECT current_datetime"
+      filters: [
+        {
+          field: "источник",
+          field_name: "source",
+          values: [],
+          selected: "источник"
+        },
+        {
+          field: "менеджер",
+          field_name: "manager",
+          values: [],
+          selected: "менеджер"
+        },
+        {
+          field: "тип рекламы",
+          field_name: "typeofad",
+          values: [],
+          selected: "тип рекламы"
+        },
+        {
+          field: "по дням",
+          field_name: "bydate",
+          values: ["по неделям", "по месяцам", "по годам"],
+          selected: "по дням"
+        },
+      ]
     }
   },
+  mounted() {
+    this.$api.get('source').then(res => {
+      // console.log(res)
+      for (let i = 0; i < this.filters.length; i++) {
+        if (this.filters[i].field_name == "source") {
+          res.forEach(item => {
+            this.filters[i].values.push(item.title)
+          })
+        }
+      }
+    })
+    this.$api.get('medium').then(res => {
+      console.log(res)
+    })
+    this.$api.get('tarif').then(res => {
+      console.log(res)
+    })
+    this.$api.get('seller').then(res => {
+      // console.log(res)
+      for (let i = 0; i < this.filters.length; i++) {
+        if (this.filters[i].field_name == "manager") {
+          res.forEach(item => {
+            this.filters[i].values.push(item.name)
+          })
+        }
+      }
+    })
+    // this.$api.get('/tarif').then(res=>{
+    //   console.log(res)
+    // })
+  },
   methods: {
+    load() {
+      // console.log(this.filters.length)
+      clearTimeout(this.timer);
+      // console.log(this.$refs)
+      this.timer = setTimeout(() => {
+        let query = '/data?'
+        // console.log(this.$refs.search,this.$refs.datefrom,this.$refs.dateto)
+        query += `search=${this.$refs.search.value}`
+        query += `&datefrom=${this.$refs.datefrom.value}`
+        query += `&dateto=${this.$refs.dateto.value}`
+        for (let i = 0; i < this.filters.length; i++) {
+          query += `&${this.filters[i].field_name}=${this.filters[i].selected}`
+        }
+        this.$api.get(query).then(res => {
+          console.log(res)
+        })
+      }, 700);
+    },
     touchStart(event, item) {
       if (window.mobileAndTabletCheck() && !this.drag.item && !this.drag.el) {
         this.drag.item = item
         let parent = event.target
         for (let i = 0; i < 10; i++) {
-          if(parent.classList.contains('card')){
+          if (parent.classList.contains('card')) {
             this.drag.el = parent
             break
-          }else{
+          } else {
             parent = parent.parentElement
           }
         }
@@ -250,7 +399,6 @@ export default {
         }
         if(!this.drag.el) return
         console.log(event)
-        document.body.style.overflowY = 'hidden'
         gsap.to(this.drag.el, {
           top: event.pageY+document.body.scrollTop - this.drag.el.offsetHeight / 2,
           left: event.pageX+document.body.scrollLeft - this.drag.el.offsetWidth / 2,
@@ -274,14 +422,14 @@ export default {
           const index = i
           const card = this.$refs.cards.querySelectorAll('.card')[i]
           if (index != this.cards.find(c => c == item).index &&
-            event.pageX >= card.offsetLeft &&
-            event.pageX <= card.offsetWidth + card.offsetLeft &&
-            event.pageY >= card.offsetTop &&
-            event.pageY <= card.offsetHeight + card.offsetTop) {
+            event.pageX + document.body.scrollLeft >= card.offsetLeft &&
+            event.pageX + document.body.scrollLeft <= card.offsetWidth + card.offsetLeft &&
+            event.pageY + document.body.scrollTop >= card.offsetTop &&
+            event.pageY + document.body.scrollTop <= card.offsetHeight + card.offsetTop) {
             let newIndex = this.cards[index].index
             this.cards[index].index = item.index
-            this.cards.map(c=>{
-              if(c != this.cards[index] && c.index == item.index){
+            this.cards.map(c => {
+              if (c != this.cards[index] && c.index == item.index) {
                 c.index = newIndex
               }
               return c
@@ -373,95 +521,94 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-.cards {
-  //display: flex;
-  //gap: 24px;
-  //flex-wrap: wrap;
+::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
 
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  //align-items: flex-start;
+  //display: grid;
+  //align-items: auto;
   .card-wrapper {
-    display: inline-block;
+    display: inline-flex;
+    vertical-align: top;
+    text-align: justify;
     margin: 12px;
-    width: 256px;
-    height: 256px;
+    width: calc(33.3vw - 24px);
+    min-height: 256px;
     @media screen and (max-width: 768px) {
-      width: 128px;
-      height: 128px;
+      width: calc(50vw - 24px);
     }
     background: rgba(220, 220, 220, 0.25);
     border-radius: 4px;
   }
 
   .card {
-    width: 256px;
+    width: calc(33.3vw - 24px);
     height: 256px;
     @media screen and (max-width: 768px) {
-      width: 128px;
-      height: 128px;
+      width: calc(50vw - 24px);
     }
     padding: 6px;
     background: #e1e1e1;
     border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     font-size: var(--font-xxl);
     position: absolute;
     color: var(--color-accent);
     cursor: pointer;
     user-select: none;
 
+    > * {
+      pointer-events: none;
+    }
+
     &.active {
       z-index: 999;
       box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03);
     }
 
-    span {
+    .title {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      font-size: var(--font-s);
+      color: var(--color-font);
+
+      &.info {
+        font-size: calc(var(--font-xl) * 1.2);
+        top: auto;
+        bottom: 12px;
+      }
+    }
+
+    p {
       position: absolute;
       top: 50%;
       left: 50%;
-      font-size: var(--font-s);
-      color: var(--color-font);
-      transform: translate(-50%,-50%);
-      pointer-events: none;
-      text-align: center;
-      width: 80%;
+      font-family: "Rothek";
+      font-size: calc(var(--font-xl) * 4);
+      transform: translate(-50%, -50%);
+    }
+
+    i {
+      position: absolute;
     }
   }
 }
-.code-wrapper{
-  padding: 24px;
-  border-radius: var(--border-radius);
-  width: 100%;
-  min-height: 500px;
-  border: 2px solid var(--color-accent-30);
-  direction: ltr;
-  text-align: left;
-  white-space: pre;
-  word-spacing: normal;
-  -moz-tab-size: 4;
-  -o-tab-size: 4;
-  tab-size: 4;
-  -webkit-hyphens: none;
-  -moz-hyphens: none;
-  -ms-hyphens: none;
-  hyphens: none;
-  background: none;
-  color: var(--color-font);
-  resize: vertical;
-  word-break: break-all;
-}
 .chart-wrapper {
-  .linechart {
-    height: 350px;
+  height: 100%;
+
+  > * {
+    height: 100%;
   }
+
   @media screen and (max-width: 768px) {
     width: 100%;
     overflow-x: scroll;
     overflow-y: hidden;
     border-radius: var(--border-radius);
-    .linechart {
-      width: 1000px;
-    }
   }
 }
 .tabs{
@@ -492,9 +639,28 @@ export default {
       flex-wrap: wrap;
       align-items: center;
     }
-    button.execute{
+
+    button.execute {
       margin-left: auto;
     }
+  }
+}
+
+.filters {
+  margin: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+}
+
+.search {
+  display: flex;
+  gap: 24px;
+  margin: 24px 12px;
+
+  .input {
+    margin-top: 0;
+    width: 100%;
   }
 }
 </style>
